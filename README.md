@@ -4,7 +4,7 @@ The present document aims to record the procedure given for data preprocessing o
 serum metabolites from children infected with the Dengue Virus. For each step a 
 brief explanation, the code and graphics obtained are included.
 
-# Analysis Notebooks
+# Analysis Notebook
 
 - [LC-MS preprocessing workflow](https://github.com/IKIAM-NPLab/Dengue_metabolomics/blob/main/Multivariate_Statistics.md)
 
