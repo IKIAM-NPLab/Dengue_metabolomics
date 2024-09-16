@@ -6,7 +6,7 @@ brief explanation, the code and graphics obtained are included.
 
 # Analysis Notebooks
 
-- [LC-MS Pos polarity](https://github.com/IKIAM-NPLab/Dengue_metabolomics/blob/main/Multivariate_Statistics.md)
+- [LC-MS preprocessing workflow](https://github.com/IKIAM-NPLab/Dengue_metabolomics/blob/main/Multivariate_Statistics.md)
 
 # Useful results
 
@@ -16,6 +16,6 @@ brief explanation, the code and graphics obtained are included.
 
 vvvvv
 
-- LC-(QTOF) afther batch correction
+- LC-(QTOF) after batch correction
 
 ccccc
