@@ -1,0 +1,215 @@
+---
+title: "Dengue Virus infection in children: serum metabolomics profiling for biomarker discovery - Data preprocessing"
+author: "Jefferson Pastuña"
+date: "2023-03-31"
+output:
+  github_document:
+    toc: true
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+usethis::git_vaccinate()
+
+```
+
+# Introduction
+
+The present notebook aims to record the procedure for data preprocessing of serum metabolites from children infected with the Dengue Virus. For each step a brief explanation, the code and graphics obtained are included.
+
+The workflow used was obtained from ["notame": Workflow for Non-Targeted LC–MS Metabolic Profiling](https://doi.org/10.3390/metabo10040135). This offers a wide variety of functions for performing untargeted metabolic profile analyses.
+
+# Before to start
+
+The "notame" package accepts as input a feature table that can be obtained through software such as MZMine, MS-DIAL, among others.
+
+In this case, a feature table was obtained using MS-DIAL. Then, MS–DIAL (*. txt) file was slightly modified to obtain the “notame” feature table format.
+
+Modifications were made to the raw (*. txt) file can be summarized by adding and renaming columns. The added columns "Column" and "Ion Mode" allow the analysis of samples with different types of chromatographic columns and ionization modes, respectively. In addition, the cells corresponding to the mass and retention time must be renamed so that the package can detect and process it.
+
+# Notame workflow
+
+As a first step for the analysis, all the necessary packages were installed and loaded.
+
+```{r echo=TRUE, message=FALSE}
+
+# Notame package installation
+#if (!requireNamespace("devtools", quietly = TRUE)) {
+#  install.packages("devtools")
+#}
+#devtools::install_github("antonvsdata/notame", ref = "v0.3.1")
+
+# Notame library call
+library(notame)
+
+# Dependency packages installation
+install_dependencies
+
+```
+
+Then, a main path (working directory) and a log system was added to have a record of each process executed.
+
+```{r echo=TRUE, message=TRUE, warning=FALSE, error=FALSE}
+
+# Main path
+ppath <- "../Dengue_metabolomics/"
+# Log system
+init_log(log_file = paste0(ppath, "Result/LCMS_log.txt"))
+
+```
+
+Next, the feature list table was imported using the read_from_excel function.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+data <- read_from_excel(file = "Data/MSDIAL-Feature_height_to_R.xlsx",
+                        sheet = 1, corner_row = 5, corner_column = "E", 
+                        split_by = c("Column", "Ion Mode"))
+
+```
+
+Once the data was read, the next step was to create a MetaboSet in order to create a specific R object.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+modes <- construct_metabosets(exprs = data$exprs, 
+                              pheno_data = data$pheno_data, 
+                              feature_data = data$feature_data,
+                              group_col = "Group")
+
+
+```
+
+## Preprocessing
+
+Each ionization mode was extracted in a single object (in this case data had only positive ionization mode). The first step of the preprocessing is to change the features with value equal to 0 to NA.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+# Data extraction
+mode <- modes$RP_POS
+# Change 0 value to NA
+mode <- mark_nas(mode, value = 0)
+
+```
+
+### Detection rate
+
+In the following line of code, the grouping of chromatographic peaks with a low detection rate was performed. Where qc_limit filters peaks not detected in the QCs; for example, a value of 75% with four QCs indicates that it will keep those chromatographic peaks that are present in at least three QCs. Similarly, in group_limit, a percentage of 80% in samples of five repetitions indicates that it will maintain peaks that are present in at least four of the five repetitions.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+# Low detection rate
+mode <- flag_detection(mode, qc_limit = 6/68, group_limit = 2/3)
+
+```
+
+### Drift correction
+
+The next step is to correct the instability of the equipment signal during the sample reading (drift effect). Drift effect correction was performed using QC through cubic spline regression.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+# Drift correction
+corrected <- correct_drift(mode)
+
+```
+
+### Low quality detection
+
+After drift correction, the low-quality data were grouped into a column named “Flag.” The flag_quality function uses the internal spread of the QCs and the spread of the QCs compared with the spread of the biological samples.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+# Flag low quality features
+corrected <- flag_quality(corrected)
+
+```
+
+### Flag contaminant
+
+Contaminants have already been removed in MS-DIAL (Sample max/blank average > 7 fold change). However, in the dataset the blank is considered as a sample. To do this, the following line of code removes process blank group from the dataset.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+# Removal blank group from dataset
+corrected <- corrected[, corrected$Group != "Blank"]
+
+```
+
+### Data imputation
+
+Imputation of missing values is then performed using a random forest algorithm to ensure data reproducibility.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+
+# Impute missing values using random forest
+set.seed(77)
+imputed <- impute_rf(corrected)
+
+```
+
+We can inspect the data quality by score PCA plot after data imputation.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+# PCA
+imputed_pca <- plot_pca(imputed,
+                      center = TRUE,
+                      shape = "Batch_ID",
+                      color = "Batch_ID")
+# Plot
+imputed_pca
+
+```
+
+### Batch effect correction
+
+As you can see in the graph above, the data exhibits batch effect. The line of code below corrects this batch effect.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+# Drop flagged features to Batch effect correction
+no_flag <- drop_flagged(imputed)
+# Batch effect correction
+corrected_batch <- normalize_batches(no_flag,
+                                     batch = "Batch_ID",
+                                     group = "QC",
+                                     ref_label = "QC")
+
+```
+
+We can inspect the data quality by score PCA plot after Batch effect correction.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+# PCA
+batch_pca <- plot_pca(corrected_batch,
+                      center = TRUE,
+                      shape = "Batch_ID",
+                      color = "Batch_ID")
+# Plot
+batch_pca
+
+```
+
+## Data exportation
+
+After preprocessing, high-quality data will be exported for statistical analysis.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+
+# Data exportation
+write_to_excel(corrected_batch, "Data_to_statistical_analysis.xlsx")
+
+```
+
+Finish a record.
+
+```{r}
+
+finish_log()
+
+```
