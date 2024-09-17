@@ -14,8 +14,8 @@ brief explanation, the code and graphics obtained are included.
 
 - LC-(QTOF) before batch correction
 
-vvvvv
+![PCA before batch correction](Result/PCA_Before_Batch.png)
 
 - LC-(QTOF) after batch correction
 
-ccccc
+![PCA before batch correction](Result/PCA_After_Batch.png)
