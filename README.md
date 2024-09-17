@@ -6,7 +6,7 @@ brief explanation, the code and graphics obtained are included.
 
 # Analysis Notebook
 
-- [LC-MS preprocessing workflow](https://github.com/IKIAM-NPLab/Dengue_metabolomics/blob/main/Multivariate_Statistics.md)
+- [LC-MS preprocessing workflow](https://github.com/IKIAM-NPLab/Dengue_metabolomics/blob/main/Data_Preprocessing.md)
 
 # Useful results
 
