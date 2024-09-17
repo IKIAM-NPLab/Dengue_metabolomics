@@ -163,8 +163,8 @@ imputed_pca <- plot_pca(imputed,
 # Plot
 imputed_pca
 # Save plot
-ggsave('Result/PCA_Before_Batch.png',
-       width = 5, height = 4, device='png', dpi="print")
+ggsave('Result/PCA_Before_Batch.jpeg',
+       width = 5, height = 4, device='jpeg', dpi="print")
 
 ```
 
@@ -196,8 +196,8 @@ batch_pca <- plot_pca(corrected_batch,
 # Plot
 batch_pca
 # Save plot
-ggsave('Result/PCA_After_Batch.png',
-       width = 5, height = 4, device='png', dpi="print")
+ggsave('Result/PCA_After_Batch.jpeg',
+       width = 5, height = 4, device='jpeg', dpi="print")
 
 ```
 
